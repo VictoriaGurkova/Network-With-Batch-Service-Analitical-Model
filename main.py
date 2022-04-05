@@ -58,18 +58,81 @@ def get_generator(_states):
 
     return gen
 
+def mean_customs_num(L, H):
+    s = [0] * L
+    for i in range(L):
+        for k in range(0, H + 1):
+            summa_pi_for_k = 0
+            for state_with_pi in states_to_pi:
+                if state_with_pi[0][i] == k:
+                    summa_pi_for_k += state_with_pi[1]
+
+            s[i] += (k * summa_pi_for_k)
+    return s
+
+
+def flow_rate(L, limits, mu, states_to_pi):
+    lambda_ = [0] * L
+    for i in range(L):
+        sum_k = 0
+        for k in range(limits[i][0], limits[i][1] + 1):
+            sum_pi = 0
+            for state in states_to_pi:
+                index = states_to_pi.index(state)
+                for s in range(k):
+                    if states_to_pi[index][0][i] == s:
+                        sum_pi += states_to_pi[index][1]
+            diff = 1 - sum_pi
+            sum_k = sum_k + (k * diff)
+        lambda_[i] = mu[i] * sum_k
+    return lambda_
+
+
+def response_time(L, s, lambda_):
+    u = [0] * L
+    for i in range(L):
+        u[i] = s[i] / lambda_[i]
+    return u
+
+
+def waiting_in_queue(L, u, mu):
+    w = [0] * L
+    for i in range(L):
+        w[i] = u[i] - (1 / mu[i])
+    return w
+
+
+def mean_customs_in_queue(L, lambda_, w):
+    b = [0] * L
+    for i in range(L):
+        b[i] = lambda_[i] * w[i]
+    return b
+
 
 if __name__ == '__main__':
-    L = 3
-    H = 4
-    limits = [(1, 3), (2, 3), (2, 4)]
+    L = 6
+    H = 11
+    limits = [(2, 7), (2, 5), (4, 6), (2, 6), (3, 7), (2, 4)]
 
-    mu = [0.5, 1., 0.7]
+    mu = [0.5, 1., 0.7, 0.4, 0.7, 0.5]
     Theta = np.array([
-        [0.3, 0.2, 0.3],
-        [0.2, 0.8, 0.0],
-        [0.3, 0.5, 0.2]
+        [0., 0.21, 0.22, 0.18, 0.2, 0.19],
+        [1., 0., 0., 0., 0., 0., 0.],
+        [1., 0., 0., 0., 0., 0., 0.],
+        [1., 0., 0., 0., 0., 0., 0.],
+        [1., 0., 0., 0., 0., 0., 0.],
+        [1., 0., 0., 0., 0., 0., 0.]
     ])
+
+    # L = 6
+    # H = 10
+    # limits = [(1, 3), (2, 3), (2, 4)]
+    # mu = [0.5, 1., 0.7]
+    # Theta = np.array([
+    #     [0., 0.7, 0.3],
+    #     [0.2, 0., 0.8],
+    #     [0.5, 0.5, 0.]
+    # ])
 
     states = list()
     temp = [0] * (L + 1)
@@ -77,9 +140,8 @@ if __name__ == '__main__':
     for i in range(H, 0, -1):
         generate_states_set(i, 1)
 
-    pprint(states)
+    print("states len list", len(states))
     generator = get_generator(states)
-    print(generator)
 
     print()
 
@@ -91,15 +153,17 @@ if __name__ == '__main__':
     states_to_pi = list(zip_longest(states, pi))
     pprint(states_to_pi)
 
-    s = [0] * L
-    for i in range(L):
-        for k in range(0, H + 1):
-            summa_pi_for_k = 0
-            for state_with_pi in states_to_pi:
-                if state_with_pi[0][i] == k:
-                    summa_pi_for_k += state_with_pi[1]
+    s = mean_customs_num(L, H)
+    print("М. о. числа требований в системах:", s, sum(s))
 
-            s[i] += (k * summa_pi_for_k)
+    lambda_ = flow_rate(L, limits, mu, states_to_pi)
+    print("Интенсивность потока требований в системы:", lambda_)
 
-    print(s, sum(s))
+    u = response_time(L, s, lambda_)
+    print("М. о. длительности пребывания требований в системе:", u)
 
+    w = waiting_in_queue(L, u, mu)
+    print("М. о. длительности пребывания требований в очереди системы:", w)
+
+    b = mean_customs_in_queue(L, lambda_, w)
+    print("М. о. числа требований в очереди:", b)
