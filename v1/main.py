@@ -5,6 +5,7 @@ from pprint import pprint
 
 import numpy as np
 from scipy.linalg import expm
+from math import floor
 
 
 def generate_states_set(customs, system):
@@ -71,27 +72,24 @@ def mean_customs_num(L, H):
     return s
 
 
-def flow_rate(L, limits, mu, states_to_pi):
+def flow_rate(L, limits, mu, states_to_pi, H):
     lambda_ = [0] * L
     for i in range(L):
-        sum_k = 0
-        for k in range(limits[i][0], limits[i][1] + 1):
-            sum_pi = 0
-            for state in states_to_pi:
-                index = states_to_pi.index(state)
-                for s in range(k):
-                    if states_to_pi[index][0][i] == s:
-                        sum_pi += states_to_pi[index][1]
-            diff = 1 - sum_pi
-            sum_k = sum_k + (k * diff)
-        lambda_[i] = mu[i] * sum_k
+        sum_pi = 0
+        for state in states_to_pi:
+            index = states_to_pi.index(state)
+            for s_i in range(limits[i][0]):
+                if states_to_pi[index][0][i] == s_i:
+                    sum_pi += states_to_pi[index][1]
+        diff = 1 - sum_pi
+        lambda_[i] = mu[i] * limits[i][0] * diff
     return lambda_
 
 
-def response_time(L, s, lambda_):
+def response_time(L, _s, lambda_):
     u = [0] * L
     for i in range(L):
-        u[i] = s[i] / lambda_[i]
+        u[i] = _s[i] / lambda_[i]
     return u
 
 
@@ -108,31 +106,50 @@ def mean_customs_in_queue(L, lambda_, w):
         b[i] = lambda_[i] * w[i]
     return b
 
+# TODO: refact this function
+def idle_time(L, states_to_pi, limits, lambda_):
+    v = [0] * L
+    for i in range(L):
+        sum_diff = 0
+        sum_pi1 = 0
+        numer = 0
+        for k in range(limits[i][0]):
+            sum_diff += (limits[i][0] - k)
+            for state in states_to_pi:
+                index = states_to_pi.index(state)
+                if k == 0:
+                    if states_to_pi[index][0][i] == k:
+                        sum_pi1 += states_to_pi[index][1]
+                else:
+                    for s in range(0, k):
+                        if states_to_pi[index][0][i] == s:
+                            sum_pi1 += states_to_pi[index][1]
+                numer += sum_diff * sum_pi1
+
+        sum_pi2 = 0
+        for k in range(limits[i][0]):
+            for state in states_to_pi:
+                index = states_to_pi.index(state)
+                for s in range(k):
+                    if states_to_pi[index][0][i] == s:
+                        sum_pi2 += states_to_pi[index][1]
+            denom = lambda_[i] * sum_pi2
+
+        v[i] = numer / denom
+    return v
+
 
 if __name__ == '__main__':
-    L = 6
-    H = 11
-    limits = [(2, 7), (2, 5), (4, 6), (2, 6), (3, 7), (2, 4)]
 
-    mu = [0.5, 1., 0.7, 0.4, 0.7, 0.5]
+    L = 3
+    H = 4
+    limits = [(1, 3), (2, 3), (2, 4)]
+    mu = [0.5, 1., 0.7]
     Theta = np.array([
-        [0., 0.21, 0.22, 0.18, 0.2, 0.19],
-        [1., 0., 0., 0., 0., 0.],
-        [1., 0., 0., 0., 0., 0.],
-        [1., 0., 0., 0., 0., 0.],
-        [1., 0., 0., 0., 0., 0.],
-        [1., 0., 0., 0., 0., 0.]
+        [0., 0.7, 0.3],
+        [0.2, 0., 0.8],
+        [0.5, 0.5, 0.]
     ])
-
-    # L = 6
-    # H = 10
-    # limits = [(1, 3), (2, 3), (2, 4)]
-    # mu = [0.5, 1., 0.7]
-    # Theta = np.array([
-    #     [0., 0.7, 0.3],
-    #     [0.2, 0., 0.8],
-    #     [0.5, 0.5, 0.]
-    # ])
 
     states = list()
     temp = [0] * (L + 1)
@@ -153,17 +170,25 @@ if __name__ == '__main__':
     states_to_pi = list(zip_longest(states, pi))
     pprint(states_to_pi)
 
-    s = mean_customs_num(L, H)
-    print("М. о. числа требований в системах:", s, sum(s))
+    print()
 
-    lambda_ = flow_rate(L, limits, mu, states_to_pi)
-    print("Интенсивность потока требований в системы:", lambda_)
+    s = mean_customs_num(L, H)
+    print("М. о. числа требований в системах:", s, sum(s), end='\n' * 2)
+
+    # print(list(map(floor, s)))
+    lambda_ = flow_rate(L, limits, mu, states_to_pi, H)
+    print("Интенсивность потока требований в системы:", lambda_, end='\n' * 2)
 
     u = response_time(L, s, lambda_)
-    print("М. о. длительности пребывания требований в системе:", u)
+    print("М. о. длительности пребывания требований в системе:", u, end='\n' * 2)
 
     w = waiting_in_queue(L, u, mu)
-    print("М. о. длительности пребывания требований в очереди системы:", w)
+    print("М. о. длительности пребывания требований в очереди системы:", w, end='\n' * 2)
 
     b = mean_customs_in_queue(L, lambda_, w)
-    print("М. о. числа требований в очереди:", b)
+    print("М. о. числа требований в очереди:", b, end='\n' * 2)
+
+    # v = idle_time(L, states_to_pi, limits, lambda_)
+    # print("М. о. длительности простоя прибора в системе :", v)
+
+# переписать заново, см. страницы 36-41 в диссертации ЕП
