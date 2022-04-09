@@ -5,7 +5,6 @@ from pprint import pprint
 
 import numpy as np
 from scipy.linalg import expm
-from math import floor
 
 
 def generate_states_set(customs, system):
