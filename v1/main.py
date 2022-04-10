@@ -43,8 +43,6 @@ def get_achievable_states(state):
 
 
 def get_generator(_states):
-    global mu, Theta
-
     n = len(_states)
     gen = np.zeros((n, n))
     for i, current_state in enumerate(_states):
@@ -57,6 +55,7 @@ def get_generator(_states):
         gen[i, i] = -sum(row)
 
     return gen
+
 
 def mean_customs_num(L, H):
     s = [0] * L
@@ -105,7 +104,7 @@ def mean_customs_in_queue(L, lambda_, w):
         b[i] = lambda_[i] * w[i]
     return b
 
-# TODO: refact this function
+
 def idle_time(L, states_to_pi, limits, lambda_):
     v = [0] * L
     for i in range(L):
