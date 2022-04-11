@@ -2,30 +2,8 @@ from copy import copy
 from math import factorial
 
 
-def get_epsilon(omega, d, Y, r):
-    L = len(omega)
-    first, second = 1, 1
-    
-    for i in range(L):
-        first *= (omega[i] ** d[i]) / factorial(d[i])
-
-    Y_r = list(filter(lambda y: sum(y) == r, Y))
-    summa = 0
-    for d in Y_r:
-        prod = 1
-        for i in range(L):
-            prod *= (omega[i] ** d[i]) / factorial(d[i])
-
-        summa += prod
-    second = 1 / summa
-
-    epsilon = first * second
-
-    # print("epsilon ->", epsilon)
-    return epsilon
-
-
 def get_P_r(states_to_pi, states, generator, Y, r):
+    print("r ->", r)
     Y_r = list(filter(lambda y: sum(y) == r, Y))
     P_r = 0
 
@@ -33,7 +11,7 @@ def get_P_r(states_to_pi, states, generator, Y, r):
         for pair in states_to_pi:
             P_r += (pair.pi * get_p_sd(generator, pair.state, d, states))
 
-    # print("P_r ->", P_r)
+    print("P_r ->", P_r)
     return P_r
 
 
@@ -80,6 +58,29 @@ def get_d_i(i, H, Y, states_to_pi, states, generator, omega):
         d_i += (get_P_r(states_to_pi, states, generator, Y, r) * summa_2)
 
     return d_i
+
+
+def get_epsilon(omega, d, Y, r):
+    L = len(omega)
+
+    first = 1
+    for i in range(L):
+        first *= ((omega[i] ** d[i]) / factorial(d[i]))
+
+    Y_r = list(filter(lambda y: sum(y) == r, Y))
+    summa = 0
+    for d in Y_r:
+        prod = 1
+        for i in range(L):
+            prod *= ((omega[i] ** d[i]) / factorial(d[i]))
+
+        summa += prod
+    second = 1 / summa
+
+    epsilon = first * second
+
+    print("epsilon ->", epsilon)
+    return epsilon
 
 
 def mean_customs_num(L, H, states_to_pi):

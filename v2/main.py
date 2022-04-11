@@ -1,11 +1,10 @@
 from collections import namedtuple
-from itertools import zip_longest
 from pprint import pprint
 
 import numpy as np
 
-from v2.base import generate_states, generate_d, generate_a, generate_Y, get_generator, get_stationary_distribution, \
-    get_omega
+from v2.base import generate_states, generate_Y, get_generator, get_stationary_distribution, \
+    get_omega, generate_d
 from v2.measures import get_d_i, mean_customs_num, response_time, waiting_in_queue, mean_customs_in_queue
 
 if __name__ == '__main__':
@@ -40,6 +39,11 @@ if __name__ == '__main__':
     states_to_pi = [StateAndPi(states[i], pi[i]) for i in range(len(states))]
     pprint(states_to_pi)
 
+    print("d_set:")
+    d_set = generate_d(limits)
+    pprint(d_set)
+    print("d_set len:", len(d_set))
+
     print("Y:")
     Y = generate_Y(limits)
     pprint(Y)
@@ -51,6 +55,7 @@ if __name__ == '__main__':
     print("sum omega:", sum(omega))
 
     print("d:")
+    # змаенили Y на d_set
     d = [get_d_i(i, H, Y, states_to_pi, states, generator, omega) for i in range(L)]
     print(d)
 
